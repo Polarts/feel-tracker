@@ -1,0 +1,76 @@
+.alert-card {
+  position: fixed;
+  pointer-events: all;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  cursor: pointer;
+  min-width: 90%;
+  max-width: 500px;
+  padding: 10px 20px;
+  text-align: left;
+  transition: transform 0.3s ease, width 0.3s ease;
+  top: 75%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  word-wrap: break-word;
+}
+
+.alert-content-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.alert-icon {
+  font-size: 1.5em;
+  margin-right: 10px;
+  color: inherit;
+  align-self: center;
+}
+
+.alert-header {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.alert-title {
+  font-family: 'Roboto';
+  font-size: 1.5rem;
+  line-height: 1.2;
+  margin-bottom: 5px;
+  color: inherit;
+}
+
+.alert-content {
+  font-family: 'Roboto';
+  font-size: 1rem;
+  line-height: 1.5;
+  color: inherit;
+  white-space: pre-wrap; 
+}
+.alert-card.alert-success {
+  background-color: #e0f7e0;
+  color: #3A5205;
+}
+
+.alert-card.alert-error {
+  background-color: #EB9393;
+  color: #4A3B06; 
+}
+
+.alert-card.alert-info {
+  background-color: #d1ecf1;
+  color: #141D72;
+}
+
+.alert-card.alert-warning {
+  background-color: #fff3cd;
+  color: #5C2F06; 
+}
+ 

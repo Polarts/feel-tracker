@@ -1,81 +1,134 @@
-import classes from './Alert.module.scss'
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { CheckCircle, Info, Warning, XCircle } from '@phosphor-icons/react';
+import classNames from 'classnames/bind';
+import classes from './Alert.module.scss';
 
-import {
-  CheckCircle,
-  Info,
-  Warning,
-  WarningCircle,
-} from '@phosphor-icons/react'
-import classNames from 'classnames/bind'
-import { useEffect, useRef } from 'react'
+const cx = classNames.bind(classes);
 
-const cx = classNames.bind(classes)
-
-export type SeverityType = 'error' | 'warning' | 'info' | 'success'
+export type SeverityType = 'error' | 'warning' | 'info' | 'success';
 
 interface AlertProps {
-  severity: SeverityType
-  description?: string
-  title?: string
-  marginTop?: boolean
-  marginButton?: boolean
-  className?: string
-  isScrollIntoView?: boolean
+  severity: SeverityType;
+  description?: string;
+  title?: string;
+  marginTop?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+  onDismiss?: () => void;
 }
 
 export type AlertType = {
-  severity: SeverityType
-  title: string
-  description: string
-}
+  id: string;
+  severity: SeverityType;
+  title: string;
+  description: string;
+};
+
+const AlertsContext = createContext<any>(undefined);
+
+export const useAlerts = () => {
+  const context = useContext(AlertsContext);
+  if (!context) {
+    throw new Error('useAlerts must be used within an AlertsPromptProvider');
+  }
+  return context;
+};
 
 const getAlertIcon = (severity: SeverityType) => {
+  const iconProps = { size: 50 };
   switch (severity) {
-    case 'error':
-      return <WarningCircle />
-    case 'warning':
-      return <Warning />
-    case 'info':
-      return <Info />
     case 'success':
-      return <CheckCircle />
+      return <CheckCircle {...iconProps} />;
+    case 'error':
+      return <XCircle {...iconProps} />;
+    case 'info':
+      return <Info {...iconProps} />;
+    case 'warning':
+      return <Warning {...iconProps} />;
+    default:
+      return <span style={{ fontSize: '5em' }}>❔</span>;
   }
-}
+};
 
-const Alert = ({
-  severity,
-  title,
-  description,
-  marginTop,
-  marginButton,
-  className,
-  isScrollIntoView,
-}: AlertProps) => {
-  const alertRef = useRef<HTMLDivElement>(null)
+const Alert = ({ severity, title, description, marginTop, className, style, onDismiss }: AlertProps) => (
+  <div
+    className={cx(
+      'alert-card',
+      `alert-${severity}`,
+      className,
+      marginTop && 'marginTop'
+    )}
+    style={style}
+    onClick={() => {
+      onDismiss?.();
+    }}
+  >
+    <div className={cx('alert-icon')}>{getAlertIcon(severity)}</div>
+    <div className={cx('alert-content-container')}>
+      {title && <div className={cx('alert-title')}>{title}</div>}
+      {description && <div className={cx('alert-content')}>{description}</div>}
+    </div>
+  </div>
+);
+
+export const AlertsPromptProvider = ({ children }: { children: ReactNode }) => {
+  const [alerts, setAlerts] = useState<AlertType[]>([]);
+  const alertTimeouts = useRef<{ [key: string]: NodeJS.Timeout }>({});
+
+  const showAlert = ({ title, severity, description }: Omit<AlertType, 'id'>) => {
+    setAlerts((prev) => {
+      if (prev.some((alert) => alert.severity === severity)) {
+        return prev;
+      }
+      const id = `${Date.now()}-${Math.random()}`;
+      const newAlert = { id, title, severity, description };
+
+      alertTimeouts.current[id] = setTimeout(() => {
+        removeAlert(id);
+      }, 10000);
+
+      return [...prev, newAlert];
+    });
+  };
+
+  const removeAlert = (id: string) => {
+    setAlerts((prev) => prev.filter((alert) => alert.id !== id));
+    if (alertTimeouts.current[id]) {
+      clearTimeout(alertTimeouts.current[id]);
+      delete alertTimeouts.current[id];
+    }
+  };
 
   useEffect(() => {
-    if (isScrollIntoView && alertRef.current) {
-      alertRef.current.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [isScrollIntoView])
+    return () => {
+      Object.values(alertTimeouts.current).forEach(clearTimeout);
+      alertTimeouts.current = {};
+    };
+  }, []);
 
   return (
-    <div
-      className={cx(className, {
-        alert: true,
-        [severity]: true,
-        marginTop,
-        marginButton,
-      })}
-      ref={alertRef}
-    >
-      <div className={classes.icon}>{getAlertIcon(severity)}</div>
-      <div className={classes.content}>
-        {!!title && <div className={classes.title}>{title}</div>}
-        {description}
+    <AlertsContext.Provider value={{ alerts, showAlert, removeAlert }}>
+      {children}
+      <div className={cx('alertsContainer')}>
+        {alerts.map((alert, index) => (
+          <Alert
+            key={alert.id}
+            severity={alert.severity}
+            title={alert.title}
+            description={alert.description}
+            marginTop={index > 0}
+            className={cx('stacked-alert')}
+            style={{
+              transform: `translate(-50%, ${index * 10}px) scaleY(${1 - index * 0.05})`,
+              borderBottomWidth: `${5 - index}px`,
+              transition: 'transform 0.3s, border-bottom-width 0.3s',
+            }}
+            onDismiss={() => removeAlert(alert.id)}
+          />
+        ))}
       </div>
-    </div>
-  )
-}
+    </AlertsContext.Provider>
+  );
+};
 
-export default Alert
+export default Alert;

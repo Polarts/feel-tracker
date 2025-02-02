@@ -1,39 +1,46 @@
-import { useState } from 'react'
-import SettingsItem from '../../../settings-item/SettingsItem'
-import { AlertType } from '../../../../../components/generic/Alert'
-import { db } from '../../../../../data/Database'
-import { DELETE_GUARD, DELETE_SUCCESS } from '../userData.constants'
+import React, { useState } from 'react';
+import SettingsItem from '../../../settings-item/SettingsItem';
+import { db } from '../../../../../data/Database';
+import { DELETE_GUARD, DELETE_SUCCESS } from '../userData.constants';
+import { useAlerts } from '@/components/generic/Alert';
 
 const DeleteData = () => {
-  const [alert, setAlert] = useState<AlertType | null>(null)
-  const [deleteGuard, setDeleteGuard] = useState<boolean>(true)
+  const [deleteGuard, setDeleteGuard] = useState(true);
+  const { showAlert } = useAlerts();
 
   const handleOnClick = async () => {
     if (deleteGuard) {
-      setAlert(DELETE_GUARD)
-      setDeleteGuard(false)
-      setTimeout(() => {
-        setDeleteGuard(true)
-      }, 5000)
+      showAlert({
+        title: DELETE_GUARD.title,
+        description: DELETE_GUARD.description,
+        severity: DELETE_GUARD.severity,
+      });
+      setDeleteGuard(false);
 
-      return
+      setTimeout(() => {
+        setDeleteGuard(true);
+      }, 5000);
+
+      return;
     }
 
-    await db.activities.clear()
-    await db.categories.clear()
+    await db.activities.clear();
+    await db.categories.clear();
 
-    setAlert(DELETE_SUCCESS)
-  }
+    showAlert({
+      title: DELETE_SUCCESS.title,
+      description: DELETE_SUCCESS.description,
+      severity: DELETE_SUCCESS.severity,
+    });
+  };
 
   return (
     <SettingsItem
       label="Delete data"
       iconKey="Trash"
       onClick={handleOnClick}
-      alert={alert}
-      onAlertRemove={() => setAlert(null)}
     />
-  )
-}
+  );
+};
 
-export default DeleteData
+export default DeleteData;
